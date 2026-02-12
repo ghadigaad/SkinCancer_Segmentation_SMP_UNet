@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv/
+
+# Jupyter
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# Editors
+.idea/
+.vscode/
+
+# Dataset folders (ignore actual data only)
+data/
+dataset/
+datasets/
+raw_data/
+
+# Compressed files
+*.zip
+*.tar
+*.tar.gz
+
+# Model weights
+*.pth
+*.pt
+*.h5
+*.pkl
+checkpoints/
+saved_models/
+weights/
+
+# Logs
+*.log
+logs/
+runs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Kaggle
+.kaggle/
