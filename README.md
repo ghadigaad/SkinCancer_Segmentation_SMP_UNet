@@ -107,7 +107,15 @@ The model demonstrates stable learning behavior:
 - Predicted masks align closely with lesion boundaries.
 - The model generalizes across various lesion sizes and skin tones.
 
-Although trained for only 5 epochs, the model shows promising segmentation capability. Further improvements can be achieved through extended training and augmentation.
+### Evaluation Metrics (Test Set)
+
+| Metric | Score |
+|--------|-------|
+| Dice Score | 0.9427 |
+| IoU (Jaccard) | 0.8979 |
+| Pixel Accuracy | 96.92% |
+
+Although trained for only 5 epochs, the model achieves strong segmentation performance with a Dice score of 0.94 and IoU of 0.90.
 
 ---
 
@@ -145,7 +153,6 @@ jupyter notebook SkinCancer_Segmentation_SMP_UNet.ipynb
 
 ## 🎯 Future Improvements
 
-- [ ] Implement additional metrics (Dice score, IoU, Pixel Accuracy)
 - [ ] Add data augmentation (rotation, flip, color jitter)
 - [ ] Experiment with different encoders (ResNet, MobileNet)
 - [ ] Implement ensemble methods
