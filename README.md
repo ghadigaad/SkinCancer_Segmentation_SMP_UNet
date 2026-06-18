@@ -1,182 +1,125 @@
-# 🩺 Skin Cancer Segmentation using U-Net
+# Skin Cancer Segmentation using U-Net
 
-This project implements a deep learning model for automated segmentation of skin cancer lesions using a U-Net architecture with a pretrained EfficientNet-B0 encoder.
+This project trains a U-Net model to segment skin lesions in dermoscopic images from the HAM10000 dataset. The encoder is EfficientNet-B0 with ImageNet weights. Training and evaluation are done in a Jupyter notebook.
 
----
+## Overview
 
-## 📋 Project Description
+The goal is binary semantic segmentation: predict a mask that separates the lesion from the background. Images are resized to 256×256 and normalized with ImageNet statistics. The model is built with PyTorch and `segmentation_models_pytorch`.
 
-Skin cancer is one of the most common types of cancer worldwide. Early and accurate detection is crucial for effective treatment.
+## Dataset
 
-This project applies **semantic segmentation** to automatically identify and delineate lesion boundaries in dermoscopic images.
+**HAM10000** (Human Against Machine with 10,000 training images)
 
-### 🔍 Model Overview
+- Source: https://www.kaggle.com/datasets/surajghuwalewala/ham1000-segmentation-and-classification
+- Training samples: 8,012
+- Test samples: 2,003
+- Images: RGB dermoscopic `.jpg` files
+- Masks: binary `.png` files (0 = background, 1 = lesion)
+- Input size: 256×256
+- Normalization (ImageNet):
+  - mean = [0.485, 0.456, 0.406]
+  - std = [0.229, 0.224, 0.225]
 
-- **Architecture**: U-Net
-- **Encoder**: EfficientNet-B0 (ImageNet pretrained)
-- **Framework**: PyTorch with `segmentation_models_pytorch`
-- **Task**: Binary segmentation (lesion vs background)
+The notebook downloads the dataset with `kagglehub`. You need Kaggle API credentials configured before running it.
 
----
+## Method
 
-## 📊 Dataset
+### Data preprocessing
 
-**HAM10000 Dataset** (Human Against Machine with 10,000 training images)
+- Load paired images and masks
+- Resize to 256×256
+- Normalize with ImageNet mean and std
+- Split into 80% train / 20% test with a fixed random seed
+- Keep image/mask pairs aligned during splitting and augmentation
 
-- **Source**: https://www.kaggle.com/datasets/surajghuwalewala/ham1000-segmentation-and-classification
-- **Training Samples**: 8,012 images
-- **Testing Samples**: 2,003 images
-- **Image Format**: RGB dermoscopic images (.jpg)
-- **Mask Format**: Binary segmentation masks (.png)
-- **Image Size**: Resized to 256×256
-- **Normalization**: ImageNet mean & std  
-  mean = [0.485, 0.456, 0.406]  
-  std = [0.229, 0.224, 0.225]
+### Model
 
-The dataset includes multiple lesion types with expert-annotated segmentation masks.
+- Architecture: U-Net
+- Encoder: EfficientNet-B0 (ImageNet pretrained)
+- Decoder: standard U-Net upsampling path with skip connections
+- Input: 3-channel RGB
+- Output: 1-channel binary mask
 
----
+### Training
 
-## 🚀 How It Works
+- Loss: combined BCE + Dice (`BCEDiceLoss`, equal weighting)
+- Optimizer: AdamW (lr = 1e-4, weight decay = 1e-4)
+- Scheduler: cosine annealing over 15 epochs
+- Batch size: 16
+- Augmentation: applied on the training set only (Albumentations; geometric transforms on image and mask together)
+- Checkpoint: best model saved by validation Dice to `best_model.pth`
+- Device: CUDA if available, otherwise CPU
 
-### 1️⃣ Data Preprocessing
+## Results
 
-- Load RGB images and grayscale masks
-- Resize all images to 256×256
-- Normalize using ImageNet statistics
-- Convert masks to binary format (0 = background, 1 = lesion)
-- Split dataset into 80% training and 20% testing
-
----
-
-### 2️⃣ Model Architecture
-U-Net
-├── Encoder: EfficientNet-B0 (pretrained on ImageNet)
-│   └── Multi-scale feature extraction
-│
-├── Decoder: U-Net upsampling path
-│   └── Skip connections for precise localization
-│
-└── Output: Single-channel binary mask
-
-
-**Key Configuration:**
-
-- Input Channels: 3 (RGB)
-- Output Classes: 1
-- Encoder Weights: ImageNet pretrained
-
----
-
-### 3️⃣ Training Setup
-
-- **Optimizer**: AdamW
-- **Learning Rate**: 0.0001
-- **Epochs**: 5
-- **Batch Size**: Configurable
-- **Loss Function**: Binary Cross-Entropy / Dice Loss
-- **Device**: CUDA (if available) or CPU
-
----
-
-## 📈 Loss Curve
-
-![Loss Curve](results/loss_curve.png)
-
-The training and validation losses decrease steadily over epochs, indicating stable convergence.
-
----
-
-## 🔍 Sample Predictions
-
-![Sample Predictions](results/sample_predictions.png)
-
-The visualization includes:
-
-- Original Image  
-- Ground Truth Mask  
-- Predicted Mask  
-
----
-
-## 📊 Results Analysis
-
-The model demonstrates stable learning behavior:
-
-- Training and validation losses decrease consistently.
-- Predicted masks align closely with lesion boundaries.
-- The model generalizes across various lesion sizes and skin tones.
-
-### Evaluation Metrics (Test Set)
+Test set metrics from the improved notebook:
 
 | Metric | Score |
 |--------|-------|
-| Dice Score | 0.9427 |
-| IoU (Jaccard) | 0.8979 |
-| Pixel Accuracy | 96.92% |
+| Dice Score | 0.9506 |
+| IoU (Jaccard) | 0.9059 |
+| Pixel Accuracy | 97.32% |
 
-Although trained for only 5 epochs, the model achieves strong segmentation performance with a Dice score of 0.94 and IoU of 0.90.
+Training and validation loss decreased over 15 epochs.
 
----
+![Training and validation loss](results/loss_curve.png)
 
-## 💻 Installation
+Sample outputs: original image, ground truth mask, and predicted mask.
 
-### Prerequisites
+![Sample predictions](results/sample_predictions.png)
+
+## Setup
+
+Requirements:
 
 - Python 3.8+
 - pip
-- CUDA-capable GPU (recommended but optional)
+- GPU recommended (optional)
 
----
-
-### Setup
+Install dependencies:
 
 ```bash
 git clone <YOUR_REPOSITORY_URL>
-cd SkinCancer_Segmentation
+cd SkinCancer_Segmentation_
 
 python -m venv venv
 source venv/bin/activate   # Windows: venv\Scripts\activate
 
-pip install -r requirements.txt
+pip install segmentation_models_pytorch kagglehub scikit-learn albumentations torch torchvision matplotlib pandas pillow
 ```
 
----
+If your repo includes `requirements.txt`, you can use `pip install -r requirements.txt` instead.
 
-## 📝 Usage
+## How to Run
+
+1. Set up Kaggle credentials so `kagglehub` can download the dataset.
+2. Open and run the notebook from top to bottom:
 
 ```bash
-jupyter notebook SkinCancer_Segmentation_SMP_UNet.ipynb
+jupyter notebook SkinCancer_Segmentation_SMP_UNet_improved.ipynb
 ```
 
----
+Use a GPU runtime if possible. On Google Colab: Runtime → Change runtime type → GPU.
 
-## 🎯 Future Improvements
+## Future Work
 
-- [ ] Add data augmentation (rotation, flip, color jitter)
-- [ ] Experiment with different encoders (ResNet, MobileNet)
-- [ ] Implement ensemble methods
-- [ ] Add cross-validation
-- [ ] Deploy as a web application
-- [ ] Optimize inference speed
-- [ ] Add multi-class segmentation support
+- Try other encoders (ResNet, MobileNet, etc.)
+- Add k-fold cross-validation
+- Compare ensemble or post-processing methods
+- Build a simple web demo for inference
+- Speed up inference for larger images
 
-## 📚 References
+## References
 
-- **Segmentation Models PyTorch**: [qubvel/segmentation_models.pytorch](https://github.com/qubvel/segmentation_models.pytorch)
-- **U-Net Paper**: [Ronneberger et al., 2015](https://arxiv.org/abs/1505.04597)
-- **HAM10000 Dataset**: [Tschandl et al., 2018](https://arxiv.org/abs/1803.10417)
-- **EfficientNet**: [Tan & Le, 2019](https://arxiv.org/abs/1905.11946)
+- Segmentation Models PyTorch: [qubvel/segmentation_models.pytorch](https://github.com/qubvel/segmentation_models.pytorch)
+- U-Net: [Ronneberger et al., 2015](https://arxiv.org/abs/1505.04597)
+- HAM10000: [Tschandl et al., 2018](https://arxiv.org/abs/1803.10417)
+- EfficientNet: [Tan & Le, 2019](https://arxiv.org/abs/1905.11946)
 
-## 📄 License
+## License
 
-This project is open source and available .
+This project is open source. See the repository for license details.
 
+## Contact
 
-## 📧 Contact
-
-For questions or feedback, please open an issue on GitHub.
-
----
-
-**Note**: Make sure to download the HAM10000 dataset before running the notebook. The notebook uses `kagglehub` to automatically download the dataset from Kaggle.
+For questions or feedback, open an issue on GitHub.
